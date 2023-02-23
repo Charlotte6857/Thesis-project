@@ -1,0 +1,98 @@
+---
+title: "thesis code"
+author: "Jessie Chen"
+date: "3/22/2022"
+output: html_document
+---
+
+```{r}
+rm(list = ls())
+setwd("E:/Work/4.4")
+
+library(gtsummary)
+library(tidyverse)
+
+load("/Users/yanjinqi/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/09f83859f811a9c23a0f09fbf6bea837/Handoff/36692-0007-Data.rda")
+data <- da36692.0007
+```
+
+```{r}
+#AGE......TRUEAGE
+data$Age <- data$TRUEAGE
+#GENDER......A1
+data$Gender <- data$A1
+#EDUCATION.....F1
+data$Education <- data$F1
+data$Education <- as.numeric(data$Education)
+data$Education <- if_else(data$Education < 12, "lessthan_highschool", 
+                          if_else(data$Education > 18, "morethan_highschool", "highschool"))
+data$Education <- factor(data$Education, levels = c("lessthan_highschool", "highschool", "morethan_highschool"))
+#SMOKING......D71
+data$Smoking <- data$D71
+data$Smoking[which(data$Smoking == "(9) missing")] <- NA
+data$Smoking <- factor(data$Smoking, levels = c("(2) no", "(1) yes"))
+#DRINKING......D81
+data$Drinking <- data$D81
+data$Drinking[which(data$Drinking == "(9) missing"| data$Drinking == "(8) do not know")] <- NA
+data$Drinking <- factor(data$Drinking, levels = c("(2) no", "(1) yes"))
+#CANCER......G15L1
+data$Cancer <- data$G15L1
+data$Cancer[which(data$Cancer == "(9)  missing"| data$Cancer == "(8) do not know")] <- NA
+data$Cancer <- factor(data$Cancer, levels = c("(2) no", "(1) yes"))
+#FRUIT......D31
+data$Fruits <- data$D31
+
+```
+
+-------
+
+**model1: the relationship between cancer + drinking, smoking, age, education, sex**
+```{r}
+data_model1 <- data %>% select(c(Age, Gender, Education, Smoking, Drinking, Cancer))
+
+model1 <- glm(Cancer ~ Drinking + Smoking + Age + Education + Gender, family = binomial(), data = data_model1)
+res1 <- summary(model1)
+res1
+```
+
+-------
+
+**model2: the relationship between cancer + diets**
+```{r}
+data_modelnew <- data %>% select(c(Age, Gender, Education, Smoking, Drinking, Cancer, D1, D31, D32, D4EGG1, D4MEAT1, D4BEAN1, D4VEG1, D4TEA1, D4SUGA1, D4GARL1, D4NUT2, D4VIT2, D4MILK1, D4ALGA1,D4FISH1,D4DRUG2,D4B,D6B))
+data_model2 <- data_modelnew[,-c(1:5)]
+data_model2[data_model2 == "(8) do not know" | data_model2 == "(8) don't know" | data_model2 == "(9) missing"] <- NA
+
+model2 <- glm(Cancer ~., data = data_model2, family = binomial(), na.action = na.omit)
+res2 <- summary(model2)
+res2
+```
+
+**model3: the relationship between cancer + demo + life style + diet**
+
+```{r}
+data_model3 <- data_modelnew
+
+data_model3[data_model3 == "(8) do not know" | data_model3 == "(8) don't know" | data_model3 == "(9) missing"] <- NA
+
+data_model3 <- na.omit(data_model3)
+model3 <- glm(Cancer ~., data = data_model3, family = binomial())
+
+library(MASS)
+step_model3 <- stepAIC(model3, direction = "both", trace = F)
+res3 <- summary(step_model3)
+res3
+```
+
+```{r}
+table1 <- tbl_regression(model1, exponentiate = T)
+table2 <- tbl_regression(model2, exponentiate = T)
+table3 <- tbl_regression(step_model3, exponentiate = T)
+merge_table <- tbl_merge(list(table1, table2, table3), tab_spanner = c("Model1", "Model2", "Model3"))
+merge_table
+write.table()
+table1
+table2
+table3
+```
+

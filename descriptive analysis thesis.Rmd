@@ -1,0 +1,588 @@
+---
+title: "JOB"
+output: html_notebook
+---
+
+
+```{r}
+#FIRST RUN THIS CHUNK FOR THE REST TO RUN
+
+library(tidyverse)
+library(tidyverse)
+
+load("/Users/jessiechen/Downloads/ICPSR_36692 5/DS0007/36692-0007-Data.rda")
+d=da36692.0007  ##{da36692.0007}this data must be in youre local environment
+
+skimr::skim(d)
+d %>%  View()
+
+```
+
+
+
+```{r}
+#MEAT
+d %>% select(starts_with("D4MEAT2"))
+
+#EGGS
+d %>% select(starts_with("D4EGG2"))
+
+#FOOD MADE FROM BEANS
+d %>% select(starts_with("D4BEAN2"))
+#SALT PRESERVED
+d %>% select(starts_with("D4VEG2"))
+#TEA
+d %>% select(starts_with("D4TEA2"))
+
+#GARLIC
+d %>% select(RD4GARLIC2)
+```
+
+
+#AGE
+```{r}
+#AGE...A3
+
+age=d  %>%  group_by(TRUEAGE) %>% tally() ##
+
+summary(d$TRUEAGE)
+sd(d$TRUEAGE)
+
+###table(d$TRUEAGE)
+
+barplot(table(d$TRUEAGE),main = "AGE BARPLOT",xlab = "AGES")
+
+
+```
+
+#GENDER
+```{r}
+#GENDER....A1
+
+gender=d %>% select(A1) %>% group_by(A1) %>% tally()
+gender
+tablegender <- table(gender)
+prop.table(tablegender)
+
+
+```
+
+#MARITUAL STATUS
+```{r}
+#MARITAL STATUS....F41
+
+d %>% group_by(F41) %>% select(F41)%>% tally()
+
+marriage=d$F41 %>% fct_collapse(
+  married=c("(1) currently married and living with spouse","(2) married but not living with spouse"),
+ divorced=c("(3)  divorced","(4) widowed"),
+ nevermarried="(5) never married" ) 
+
+table(marriage)
+ barplot(table(marriage),main = "MARITUAL STATUS")
+summary(marriage)
+prop.table(table(marriage))
+ 
+```
+
+
+#EDUCATION
+```{r}
+#EDUCATION
+# LESS THAn HIGHSCHOOL=year< 12
+#highchool=13<years<17
+#more than highschool=years>18
+
+
+lessthan_highschool=d%>%select(F1) %>%  filter(F1<=12) %>% tally();lessthan_highschool
+
+highschool=d%>%select(F1) %>%  filter(13<F1 & F1<=17) %>% tally();highschool
+
+morethan_highschool=d%>%select(F1) %>%  filter(F1>=18) %>% tally();morethan_highschool 
+
+summary(d$F1)
+sd(d$F1)
+
+
+```
+
+
+#SMOKING
+```{r}
+
+smoooking=d %>%group_by(D71) %>%  select(D71) %>% tally()
+smoooking
+
+barplot(table(d$D71),ylim = c(0,6000),main = "SMOKKING")
+```
+
+
+
+#DRINKING
+```{r}
+#DRINKING
+drinking=d %>%group_by(D81) %>%  select(D81) %>% group_by(D81) %>% tally() %>% na.omit()
+table(d$D81)
+barplot(table(d$D81),main = "DRINKING")
+```
+
+
+#BIVARIATE FRUIT CANCER
+```{r}
+fruitcancer=d %>% select(G15L1,D31)  %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  "yes"="(1) yes",
+  "no"=c("(2) no","(8) do not know","(9)  missing"   )),
+    fruits=  fct_collapse(D31,
+              "no"=c("(4) rarely or never", "(8) don't know" ,"(9) missing"  ),
+    "yes"=c("(1) almost everyday" ,"(2) quite often","(3) occasionally") ) ) %>%
+  select(fruits,cancer) %>% 
+  na.omit() 
+
+table(fruitcancer)
+prop.table(table(fruitcancer))
+
+
+chi2 = chisq.test(table(fruitcancer), correct=F)
+c(chi2$statistic, chi2$p.value)
+
+```
+
+
+
+
+
+#BIVARIATE VEG CANCER
+```{r}
+vegscancer=d %>% select(G15L1,D32)  %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    vegs=  fct_collapse(D32,
+                no=c("(4) rarely or never","(8) don't know", "(9) missing"),
+     yes=c("(1) almost everyday" ,"(3) occasionally","(2) except winter")) ) %>%
+               select(vegs,cancer) %>% na.omit() 
+
+table(vegscancer)
+prop.table(table(vegscancer))
+
+```
+
+
+
+#BIVARIATE MEAT CANCER
+```{r}
+meatcancer=d %>% select(G15L1,D4MEAT2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    meat=fct_collapse(D4MEAT2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(cancer,meat) %>% na.omit()
+  
+table(meatcancer)
+prop.table(table(meatcancer))
+
+```
+
+
+
+#BIVARIATE EGG CANCER
+
+```{r}
+eggcancer=d %>% select(G15L1,D4EGG2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    egg=fct_collapse(D4EGG2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(egg,cancer) %>% na.omit()
+  
+
+table(eggcancer)
+prop.table(table(eggcancer))
+```
+
+
+
+#BIVARIATE BEAN CANCER
+
+```{r}
+beancancer=d %>% select(G15L1,D4BEAN2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    bean=fct_collapse(D4BEAN2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(bean,cancer) %>% na.omit()
+  
+
+table(beancancer)
+prop.table(table(beancancer))
+```
+
+
+
+#BIVARIATE SALT PRESERVED CANCER
+
+```{r}
+saltcancer=d %>% select(G15L1,D4VEG2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    salt=fct_collapse(D4VEG2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(salt,cancer) %>% na.omit()
+  
+
+table(saltcancer)
+prop.table(table(saltcancer))
+```
+
+
+
+#BIVARIATE TEA CANCER
+
+```{r}
+teacancer=d %>% select(G15L1,D4TEA2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+  tea=fct_collapse(D4TEA2,no=c("(5) rarely or never" ,"(8) don't know","(6) 6" ),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(tea,cancer) %>% na.omit()
+  
+
+table(teacancer)
+prop.table(table(teacancer))
+```
+
+
+
+#BIVARIATE GARLIC CANCER
+
+```{r}
+garliccancer=d %>% select(G15L1,D4GARL2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    garlic=fct_collapse(D4GARL2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(garlic,cancer) %>% na.omit()
+  
+
+table(garliccancer)
+prop.table(table(garliccancer))
+
+```
+fish
+```{r}
+fish=d %>% select(G15L1,D4FISH1) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    fish=fct_collapse(D4FISH1,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(fish,cancer) %>% na.omit()
+  
+
+table(fish)
+prop.table(table(fish))
+```
+stable food
+```{r}
+stablefood=d %>% select(G15L1,D1)%>% 
+mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    stablefood=fct_collapse(D1,no=c("(5) rice" ,"(8) corn"),
+                      yes=c("(1) wheat","(2) rice and wheat","(9) missing","(3) other"))) %>% 
+    select(stablefood,cancer) %>% na.omit()
+table(d %>% select(G15L1,D1))
+
+```
+```{r}
+milk=d %>% select(G15L1,D4MILK2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    milk=fct_collapse(D4MILK2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(milk,cancer) %>% na.omit()
+  
+
+table(milk)
+prop.table(table(milk))
+```
+```{r}
+nuts=d %>% select(G15L1,D4NUT2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    nuts=fct_collapse(D4NUT2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(nuts,cancer) %>% na.omit()
+  
+
+table(nuts)
+prop.table(table(nuts))
+
+```
+```{r}
+mushroom=d %>% select(G15L1,D4ALGA2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    mushroom=fct_collapse(D4ALGA2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(mushroom,cancer) %>% na.omit()
+  
+
+table(mushroom)
+prop.table(table(mushroom))
+```
+
+```{r}
+VIT=d %>% select(G15L1,D4VIT2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+   VIT=fct_collapse(D4VIT2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(VIT,cancer) %>% na.omit()
+  
+
+table(VIT)
+prop.table(table(VIT))
+```
+```{r}
+drug=d %>% select(G15L1,D4DRUG2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+   drug=fct_collapse(D4DRUG2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once per week","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(drug,cancer) %>% na.omit()
+  
+
+table(drug)
+prop.table(table(drug))
+```
+```{r}
+teatype=d %>% select(G15L1,D4B)%>% 
+mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    teatype=fct_collapse(D48,no=c("(5) rice" ,"(8) corn"),
+                      yes=c("(1) wheat","(2) rice and wheat","(9) missing","(3) other"))) %>% 
+    select(teatype,cancer) %>% na.omit()
+table(d %>% select(G15L1,D48))
+
+
+```
+```{r}
+sugar=d %>% select(G15L1,D4SUGA1) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+   sugar=fct_collapse(D4SUGA1,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2)  not everyday, but at least once  per week ","(9) missing","(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(sugar,cancer) %>% na.omit()
+  
+
+table(sugar)
+prop.table(table(sugar))
+
+```
+
+
+##||
+
+
+#FRUIT CANCER LOGISTIC
+```{r}
+
+fruitcancer=d %>% select(G15L1,D31)  %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    fruits=  fct_collapse(D31,
+                no=c("(4) rarely or never", "(8) don't know" ,"(9) missing"  ),
+      yes=c("(1) almost everyday" ,"(2) quite often","(3) occasionally") ) ) %>%
+               
+  select(cancer,fruits) %>% 
+  na.omit() 
+
+table(fruitcancer)
+
+summary(glm(fruitcancer$cancer~fruitcancer$fruit,family = "binomial"))
+
+```
+
+
+
+#VEGETABLE CANCER LOGISTIC
+```{r}
+vegscancer=d %>% select(G15L1,D32)  %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    vegs=  fct_collapse(D32,
+                no=c("(4) rarely or never","(8) don't know", "(8) don't know"),
+     yes=c("(1) almost everyday" ,"(3) occasionally") ,
+     rarely="(2) except winter") ) %>%
+               
+  select(cancer,vegs) %>% 
+  na.omit() 
+
+table(vegscancer)
+
+barplot(table(vegscancer))
+
+summary(glm(vegscancer$cancer~vegscancer$vegs,family = "binomial"))
+
+```
+
+
+
+
+
+#MEAT CANCER LOGISTIC
+```{r}
+
+meatcancer=d %>% select(G15L1,D4MEAT2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    meat=fct_collapse(D4MEAT2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing"),
+                      rarely=c("(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(cancer,meat) %>% na.omit()
+  
+table(meatcancer)
+barplot(table(meatcancer))
+  
+summary(glm(meatcancer$cancer~meatcancer$meat,family = "binomial"))
+
+```
+
+
+
+
+
+#EGG CANCER LOGISTIC
+```{r}
+eggcancer=d %>% select(G15L1,D4EGG2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    egg=fct_collapse(D4EGG2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing"),
+                      rarely=c("(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(cancer,egg) %>% na.omit()
+  
+
+table(eggcancer)
+barplot(table(eggcancer))
+
+summary(glm(eggcancer$cancer~eggcancer$egg,family = "binomial"))
+
+```
+
+
+
+
+
+
+
+#FOOD PRESERVED BY BEANS AND CANCER LOGISTIC
+```{r}
+beancancer=d %>% select(G15L1,D4BEAN2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    bean=fct_collapse(D4BEAN2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing"),
+                      rarely=c("(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(cancer,bean) %>% na.omit()
+  
+
+table(beancancer)
+barplot(table(beancancer))
+
+summary(glm(beancancer$cancer~beancancer$bean,family = "binomial"))
+
+```
+
+
+
+#SALTY PRESERVED FOOD AND CANCER LOGISTIC
+
+```{r}
+saltcancer=d %>% select(G15L1,D4VEG2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    salt=fct_collapse(D4VEG2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing"),
+                      rarely=c("(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(cancer,salt) %>% na.omit()
+  
+
+table(saltcancer)
+
+summary(glm(saltcancer$cancer~saltcancer$salt,family = "binomial"))
+
+```
+
+
+
+
+
+
+#TEA AND CANCER LOGISTIC
+```{r}
+teacancer=d %>% select(G15L1,D4TEA2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    tea=fct_collapse(D4TEA2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing"),
+                      rarely=c("(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(cancer,tea) %>% na.omit()
+  
+
+table(teacancer)
+barplot(table(teacancer))
+
+summary(glm(teacancer$cancer~teacancer$tea,family = "binomial"))
+
+```
+
+
+
+
+
+
+#GARLIC AND CANCER LOGISTIC
+```{r}
+garliccancer=d %>% select(G15L1,D4GARL2) %>% 
+  mutate(cancer=fct_collapse(G15L1,
+  yes="(1) yes",
+  no=c("(2) no","(8) do not know","(9)  missing"   )),
+    garlic=fct_collapse(D4GARL2,no=c("(5) rarely or never" ,"(8) don't know"),
+                      yes=c("(1) almost everyday","(2) not everyday, but at least once  per week","(9) missing"),
+                      rarely=c("(3) not every week, but at least once  per month","(4) not every month, but occasionally"))) %>% 
+    select(cancer,garlic) %>% na.omit()
+  
+
+table(garliccancer)
+barplot(table(garliccancer))
+
+summary(glm(garliccancer$cancer~garliccancer$garlic,family = "binomial"))
+
+```
+
+
+
+
